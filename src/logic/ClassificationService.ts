@@ -3,7 +3,7 @@ export type Priority = 'important' | 'unimportant';
 /*import { GenerativeModel, GoogleGenerativeAI } from "@google/generative-ai";
 
 // model setup
-const apiKey: string = "AIzaSyDSY87OQyS2t8XetjMWphADkY3ejcl2RW8";
+const apiKey: string = "";
 const genAI: GoogleGenerativeAI = new GoogleGenerativeAI(apiKey);
 const model: GenerativeModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });*/
 // import Groq from "groq-sdk";
