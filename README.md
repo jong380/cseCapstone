@@ -35,3 +35,8 @@ adb shell cmd notification post -S bigtext -t "TestTitle" "tag" "Test notificati
 ```
 
 The Nodi log screen will show whether the notification was allowed or suppressed.
+
+# Nodi - AI Notification Filtering App
+CSE 481 L Capstone
+
+Iryna Kovalenko, Keosha Chhajed, Ian Limasi, Jayden Ong
