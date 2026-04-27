@@ -1,118 +1,80 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from 'react-native';
+import {startNotificationFilter, stopNotificationFilter, FilterEvent} from './src/logic/NotificationFilter';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+type LogEntry = {
+  id: string;
+  label: string;
+  color: string;
+};
 
 function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  const [log, setLog] = useState<LogEntry[]>([]);
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+  // we're passing a callback function to 'startNotificationFilter'
+  // -> the callback function will add the notification to the 'log' useState
+  // -> every log in the 'log' state will be displayed
+  // NOTE: 'startNotificationFilter' runs continuously until the app is closed
+  useEffect(() => {
+    startNotificationFilter((event: FilterEvent) => {
+      const entry: LogEntry = {
+        id: `${event.notification.id}-${Date.now()}`,
+        label:
+          event.type === 'allowed'
+            ? `+ ALLOWED -> ${event.notification.title}: ${event.notification.content}`
+            : event.type === 'suppressed'
+            ? `- SUPPRESSED -> ${event.notification.title}: ${event.notification.content}`
+            : `! ERROR -> ${event.notification.title}: ${event.error.message}`,
+        color:
+          event.type === 'allowed'
+            ? '#2e7d32'
+            : event.type === 'suppressed'
+            ? '#c62828'
+            : '#e65100',
+      };
+      setLog(prev => [entry, ...prev]);
+    });
+
+    return () => stopNotificationFilter();
+  }, []);
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#1a1a1a" />
+      <View style={styles.header}>
+        <Text style={styles.headerText}>Nodi</Text>
+        <Text style={styles.subText}>Filter is active</Text>
+      </View>
+      <ScrollView style={styles.scroll}>
+        {log.length === 0 ? (
+          <Text style={styles.empty}>No notifications intercepted yet.</Text>
+        ) : (
+          log.map(entry => (
+            <Text key={entry.id} style={[styles.entry, {color: entry.color}]}>
+              {entry.label}
+            </Text>
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
+  container: {flex: 1, backgroundColor: '#1a1a1a'},
+  header: {padding: 24, borderBottomWidth: 1, borderBottomColor: '#333'},
+  headerText: {fontSize: 20, fontWeight: '700', color: '#fff'},
+  subText: {fontSize: 13, color: '#4caf50', marginTop: 4},
+  scroll: {flex: 1, padding: 16},
+  empty: {color: '#888', marginTop: 16, textAlign: 'center'},
+  entry: {fontSize: 14, marginBottom: 12, lineHeight: 20},
 });
 
 export default App;

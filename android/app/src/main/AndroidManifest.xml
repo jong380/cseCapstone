@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
 
     <application
       android:name=".MainApplication"
@@ -21,5 +23,15 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+
+      <service
+        android:name=".NodiNotificationListenerService"
+        android:label="Nodi Notification Filter"
+        android:exported="true"
+        android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+        <intent-filter>
+          <action android:name="android.service.notification.NotificationListenerService" />
+        </intent-filter>
+      </service>
     </application>
 </manifest>
