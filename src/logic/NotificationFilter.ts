@@ -1,4 +1,5 @@
 import { EmitterSubscription } from 'react-native';
+import { insertSuppressedNotification } from '../database/Database';
 import {
   notificationEmitter,
   resolveNotification,
@@ -39,6 +40,11 @@ export function startNotificationFilter(onEvent?: FilterEventHandler): void {
           onEvent?.({ type: 'allowed', notification });
         } else {
           resolveNotification(notification.id, 'suppress');
+          insertSuppressedNotification(
+          notification.content,
+          notification.source,
+          notification.title,
+          );
           onEvent?.({ type: 'suppressed', notification });
         }
       } catch (err) {
