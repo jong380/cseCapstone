@@ -1,5 +1,6 @@
 export type Priority = 'important' | 'unimportant';
 import { GROQ_API_KEY } from '@env';
+// IMPORTANT: get your groq API key and place it into .env file in the project root.
 const apiKey: string = GROQ_API_KEY;
 
 /*import { GenerativeModel, GoogleGenerativeAI } from "@google/generative-ai";
