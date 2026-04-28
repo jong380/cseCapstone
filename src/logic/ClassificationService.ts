@@ -1,15 +1,16 @@
 export type Priority = 'important' | 'unimportant';
+import { GROQ_API_KEY } from '@env';
+const apiKey: string = GROQ_API_KEY;
 
 /*import { GenerativeModel, GoogleGenerativeAI } from "@google/generative-ai";
 
 // model setup
-const apiKey: string = "";
+
 const genAI: GoogleGenerativeAI = new GoogleGenerativeAI(apiKey);
 const model: GenerativeModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });*/
 // import Groq from "groq-sdk";
 // const client = new Groq({ apiKey: "", dangerouslyAllowBrowser: true });
 // NEED TO FILL IN IF TESTING
-const apiKey: string = "";
 export async function classifyNotification(
 _source: string,
 _title: string,
