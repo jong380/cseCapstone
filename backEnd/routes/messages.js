@@ -2,13 +2,16 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database/database');
 
+// Insert a new supressed notification into the database
 router.post('/', (req, res) => {
   const { time, content, source, sender } = req.body;
 
+  // Validate that all required fields are present
   if (!time || !content || !source || !sender) {
     return res.status(400).json({ error: 'Missing required fields: time, content, source, sender' });
   }
 
+  // Insert the message into the database
   try {
     const stmt = db.prepare(`
       INSERT INTO messages (time, content, source, sender)
@@ -22,6 +25,7 @@ router.post('/', (req, res) => {
   }
 });
 
+// Retrieve all supressed messages from the database
 router.get('/', (req, res) => {
   try {
     const rows = db.prepare('SELECT * FROM messages ORDER BY time DESC').all();

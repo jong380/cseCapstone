@@ -1,8 +1,10 @@
 import SQLite from 'react-native-sqlite-storage';
 
 SQLite.enablePromise(false);
+// Opens database in default location
 const db = SQLite.openDatabase({ name: 'nodi.db', location: 'default' });
 
+// Create table if it doesn't exist
 export const initDB = () => {
   db.transaction(tx => {
     tx.executeSql(`
@@ -17,6 +19,7 @@ export const initDB = () => {
   });
 };
 
+// Insert new notification into database
 export const insertSuppressedNotification = (
   content: string,
   source: string,
@@ -30,6 +33,7 @@ export const insertSuppressedNotification = (
   });
 };
 
+// Get all notifications from database
 export const getSuppressedNotifications = (callback: (rows: any[]) => void) => {
   db.transaction(tx => {
     tx.executeSql(
