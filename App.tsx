@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+import { initDB, getSuppressedNotifications } from './src/database/Database';
 import {
   SafeAreaView,
   ScrollView,
@@ -23,6 +24,8 @@ function App(): React.JSX.Element {
   // -> every log in the 'log' state will be displayed
   // NOTE: 'startNotificationFilter' runs continuously until the app is closed
   useEffect(() => {
+      initDB();
+      getSuppressedNotifications(rows => console.log('DB contents:', rows));
     startNotificationFilter((event: FilterEvent) => {
       const entry: LogEntry = {
         id: `${event.notification.id}-${Date.now()}`,
