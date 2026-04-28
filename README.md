@@ -22,7 +22,8 @@ App.tsx                               -- UI entry point
 
 ## Project Setup
 This project requires an API KEY to classify notifications. Get your free API Key here: https://console.groq.com
-Afterwards, Create a `.env` file in the project root using this template: GROQ_API_KEY=your_api_key_here
+
+Afterwards, Create a `.env` file in the project root using this template: ```GROQ_API_KEY=your_api_key_here```
 
 ## Testing
 
