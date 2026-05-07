@@ -5,10 +5,17 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import com.facebook.react.bridge.WritableNativeMap
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import com.nodi.Message
+import com.nodi.NodiDatabase
+
 // This class extends NotificationListenerService, to be Nodi-specific
 // This is what registers the class with Android as a real notification listener
 class NodiNotificationListenerService : NotificationListenerService() {
 
+    private val serviceScope = CoroutineScope(Dispatchers.IO)
     // Same idea here, allows the module instance to use the stored reference of the
     // service instance to call the resolveNotification() function
     companion object {
@@ -65,6 +72,15 @@ class NodiNotificationListenerService : NotificationListenerService() {
         // It allows us to use constants that simplify the actual key names
         val title = extras.getString(Notification.EXTRA_TITLE) ?: ""
         val content = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
+
+        // This is the Android ROOM database object that holds the message
+        val incomingMessage = Message(
+            time = sbn.postTime.toString(),
+            content = content,
+            source = sbn.packageName,
+            sender = title,
+            status = "pending" // Default status before AI reviews it
+        )
 
         // This just makes a HashMap that the frontend can later turn into a JavaScript/TypeScript object
         val payload = WritableNativeMap().apply {
