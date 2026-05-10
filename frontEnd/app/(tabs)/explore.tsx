@@ -1,112 +1,211 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { router } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-import { Collapsible } from '@/components/ui/collapsible';
-import { ExternalLink } from '@/components/external-link';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
+import { listMessages, type SavedMessage } from '@/services/backendService';
 
-export default function TabTwoScreen() {
+export default function SuppressedScreen() {
+  const [messages, setMessages] = useState<SavedMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      setError(null);
+      const rows = await listMessages();
+      // Hide chat turns — only show real notification rows.
+      const suppressed = rows.filter((m) => m.source !== 'chat');
+      setMessages(suppressed);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load notifications');
+    }
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      await load();
+      setIsLoading(false);
+    })();
+  }, [load]);
+
+  const onRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await load();
+    setIsRefreshing(false);
+  }, [load]);
+
+  const formatTime = (iso: string) => {
+    try {
+      const d = new Date(iso);
+      return d.toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+    } catch {
+      return iso;
+    }
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.backText}>‹ Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>Queued</Text>
+        <Text style={styles.subtitle}>Notifications Nodi filtered out for you.</Text>
+      </View>
+
+      {isLoading ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#111" />
+        </View>
+      ) : error ? (
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={load}>
+            <Text style={styles.retryText}>Try again</Text>
+          </TouchableOpacity>
+        </View>
+      ) : messages.length === 0 ? (
+        <View style={styles.centered}>
+          <Text style={styles.emptyTitle}>Nothing queued yet</Text>
+          <Text style={styles.emptyBody}>
+            When Nodi filters a notification, it&apos;ll show up here.
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={messages}
+          keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={onRefresh}
+              tintColor="#111"
+            />
+          }
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardSource}>{item.source}</Text>
+                <Text style={styles.cardTime}>{formatTime(item.time)}</Text>
+              </View>
+              <Text style={styles.cardSender}>{item.sender}</Text>
+              <Text style={styles.cardContent}>{item.content}</Text>
+            </View>
+          )}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText
-          type="title"
-          style={{
-            fontFamily: Fonts.rounded,
-          }}>
-          Explore
-        </ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image
-          source={require('@/assets/images/react-logo.png')}
-          style={{ width: 100, height: 100, alignSelf: 'center' }}
-        />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful{' '}
-          <ThemedText type="defaultSemiBold" style={{ fontFamily: Fonts.mono }}>
-            react-native-reanimated
-          </ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingTop: 70,
   },
-  titleContainer: {
+  header: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+  },
+  backText: {
+    fontSize: 16,
+    color: '#111',
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: '#555',
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 6,
+    color: '#111',
+  },
+  emptyBody: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  errorText: {
+    color: '#991b1b',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  retryButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    backgroundColor: '#111',
+    borderRadius: 20,
+  },
+  retryText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  listContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+  },
+  card: {
+    backgroundColor: '#f3f4f6',
+    padding: 16,
+    borderRadius: 20,
+    marginBottom: 12,
+  },
+  cardHeader: {
     flexDirection: 'row',
-    gap: 8,
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  cardSource: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#374151',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  cardTime: {
+    fontSize: 12,
+    color: '#888',
+  },
+  cardSender: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111',
+    marginTop: 2,
+  },
+  cardContent: {
+    fontSize: 14,
+    color: '#374151',
+    marginTop: 4,
   },
 });

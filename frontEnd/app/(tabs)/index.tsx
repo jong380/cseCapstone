@@ -2,6 +2,7 @@ import BottomSheet, {
   BottomSheetScrollView,
   BottomSheetTextInput,
 } from '@gorhom/bottom-sheet';
+import { router } from 'expo-router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -94,10 +95,14 @@ export default function HomeScreen() {
           <Text>Open to see</Text>
         </View>
 
-        <View style={styles.card}>
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() => router.push('/explore')}
+          activeOpacity={0.7}
+        >
           <Text style={styles.cardTitle}>Queued</Text>
           <Text>Open to see</Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.openChatButton} onPress={openChat}>
