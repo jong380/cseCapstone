@@ -68,3 +68,4 @@ src/config.ts
 
 #dont add api key
 .env
+nodi.db
