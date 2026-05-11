@@ -11,6 +11,9 @@ android/app/src/main/java/com/nodi/
   NodiNotificationListenerService.kt  -- listens to all Android notifications
   NotificationModule.kt               -- bridge between Kotlin and JavaScript
   NotificationPackage.kt              -- registers the module with React Native
+  Message.kt                          -- database table schema
+  MessageDao.kt                       -- queries for database operations
+  NodiDatabase.kt                     -- database object
 
 src/
   bridge/
