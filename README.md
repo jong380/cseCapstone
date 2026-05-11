@@ -30,7 +30,8 @@ This project requires an API KEY to classify notifications. Get your free API Ke
 
 Afterwards, Create a `.env` file in the project root using this template: ```GROQ_API_KEY=your_api_key_here```
 
-Also, for proper notification fetching, add this line as well in `.env`:BACKEND_URL=http://localhost:3000/
+Also, for proper notification fetching, add this line as well in `.env`:
+`BACKEND_URL=http://localhost:3000/`
 
 ## Running the Project
 
