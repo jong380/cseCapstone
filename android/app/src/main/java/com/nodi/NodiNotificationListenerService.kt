@@ -25,6 +25,11 @@ class NodiNotificationListenerService : NotificationListenerService() {
         fun resolveNotification(key: String, action: String) {
             if (action == "suppress") {
                 instance?.cancelNotification(key)
+                // update status in ROOM
+                instance?.serviceScope?.launch {
+                    val db = NodiDatabase.getInstance(instance!!.applicationContext)
+                    db.messageDao().updateStatus(key, "suppressed")
+                }
             }
             // "allow" = do nothing, notification is already posted
         }
@@ -81,6 +86,10 @@ class NodiNotificationListenerService : NotificationListenerService() {
             sender = title,
             status = "pending" // Default status before AI reviews it
         )
+        // Insert message into ROOM database
+        serviceScope.launch {
+            NodiDatabase.getInstance(applicationContext).messageDao().insert(incomingMessage)
+        }
 
         // This just makes a HashMap that the frontend can later turn into a JavaScript/TypeScript object
         val payload = WritableNativeMap().apply {

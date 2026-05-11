@@ -20,4 +20,8 @@ interface MessageDao {
     // Used to populate the suppressed notifications log in the UI
     @Query("SELECT * FROM messages WHERE status = 'suppressed' ORDER BY time DESC")
     fun getSuppressed(): List<Message>
+
+    // Update messages
+    @Query("UPDATE messages SET status = :status WHERE source = :key")
+    fun updateStatus(key: String, status: String)
 }
