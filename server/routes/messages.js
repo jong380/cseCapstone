@@ -4,7 +4,7 @@ const db = require('../database/database');
 
 // Insert a new supressed notification into the database
 router.post('/', (req, res) => {
-  const { time, content, source, sender } = req.body;
+  const { time, content, source, sender, status} = req.body;
 
   // Validate that all required fields are present
   if (!time || !content || !source || !sender) {
@@ -14,10 +14,10 @@ router.post('/', (req, res) => {
   // Insert the message into the database
   try {
     const stmt = db.prepare(`
-      INSERT INTO messages (time, content, source, sender)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO messages (time, content, source, sender, status)
+      VALUES (?, ?, ?, ?, ?)
     `);
-    const result = stmt.run(time, content, source, sender);
+    const result = stmt.run(time, content, source, sender, status);
     res.status(201).json({ id: result.lastInsertRowid });
   } catch (err) {
     console.error('DB insert error:', err);
