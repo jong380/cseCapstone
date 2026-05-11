@@ -14,7 +14,8 @@ db.exec(`
     time INTEGER NOT NULL,
     content TEXT NOT NULL,
     source TEXT NOT NULL,
-    sender TEXT NOT NULL
+    sender TEXT NOT NULL,
+    status TEXT NOT NULL
   );
 `);
 

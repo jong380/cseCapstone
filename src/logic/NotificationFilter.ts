@@ -49,6 +49,7 @@ export function startNotificationFilter(onEvent?: FilterEventHandler): void {
               content: notification.content,
               source: notification.source,
               sender: notification.title,
+              status: 'suppressed',
             }),
           }).catch(err => console.error('Backend post failed:', err));
           onEvent?.({ type: 'suppressed', notification });

@@ -28,7 +28,9 @@ class NodiNotificationListenerService : NotificationListenerService() {
                 // update status in ROOM
                 instance?.serviceScope?.launch {
                     val db = NodiDatabase.getInstance(instance!!.applicationContext)
-                    db.messageDao().updateStatus(key, "suppressed")
+                    val source = key.split("|").firstOrNull() ?: key
+                    db.messageDao().updateStatus(source, "suppressed")
+                    //db.messageDao().updateStatus(key, "suppressed")
                 }
             }
             // "allow" = do nothing, notification is already posted
