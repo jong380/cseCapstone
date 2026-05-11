@@ -1,5 +1,4 @@
 import { EmitterSubscription } from 'react-native';
-import { insertSuppressedNotification } from '../database/Database';
 import {
   notificationEmitter,
   resolveNotification,
@@ -7,6 +6,7 @@ import {
 } from '../bridge/NotificationModule';
 import { classifyNotification } from './ClassificationService';
 
+import { BACKEND_URL } from '@env';
 let subscription: EmitterSubscription | null = null;
 
 export type FilterEvent =
@@ -40,23 +40,28 @@ export function startNotificationFilter(onEvent?: FilterEventHandler): void {
           onEvent?.({ type: 'allowed', notification });
         } else {
           resolveNotification(notification.id, 'suppress');
-          insertSuppressedNotification(
-          notification.content,
-          notification.source,
-          notification.title,
-          );
+          // Fetch POST request
+          fetch(`${BACKEND_URL}/messages`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              time: new Date(notification.time).toISOString(),
+              content: notification.content,
+              source: notification.source,
+              sender: notification.title,
+            }),
+          }).catch(err => console.error('Backend post failed:', err));
           onEvent?.({ type: 'suppressed', notification });
         }
       } catch (err) {
-        // Default to allowing on error so nothing is silently dropped
-        resolveNotification(notification.id, 'allow');
         onEvent?.({ type: 'error', notification, error: err as Error });
       }
     },
-  );
+    );
 }
 
 export function stopNotificationFilter(): void {
   subscription?.remove();
   subscription = null;
 }
+
