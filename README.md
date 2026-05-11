@@ -2,6 +2,8 @@
 
 An Android app that intercepts notifications during focus mode, classifies them using an LLM, and suppresses unimportant ones.
 
+Iryna Kovalenko, Keosha Chhajed, Ian Limasi, Jayden Ong
+
 ## Project structure
 
 ```
@@ -25,6 +27,18 @@ This project requires an API KEY to classify notifications. Get your free API Ke
 
 Afterwards, Create a `.env` file in the project root using this template: ```GROQ_API_KEY=your_api_key_here```
 
+## Running the Project
+
+Open 3 terminals from the project root:
+
+| Terminal | Command | Description |
+|----------|---------|-------------|
+| 1 | `npm start` | Starts Metro bundler |
+| 2 | `cd server && npm start` | Starts Express backend |
+| 3 (once per session) | `adb reverse tcp:3000 tcp:3000` | Forwards backend port to physical device |
+
+> **Note:** Terminal 3 is only needed when testing on a physical Android device. Re-run it each time you reconnect your device via USB.
+
 ## Testing
 
 Grant notification access to the app:
@@ -40,8 +54,3 @@ adb shell cmd notification post -S bigtext -t "TestTitle" "tag" "Test notificati
 ```
 
 The Nodi log screen will show whether the notification was allowed or suppressed.
-
-# Nodi - AI Notification Filtering App
-CSE 481 L Capstone
-
-Iryna Kovalenko, Keosha Chhajed, Ian Limasi, Jayden Ong
