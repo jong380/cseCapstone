@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -10,9 +10,10 @@ import {
   View,
 } from 'react-native';
 
-import { listMessages, type SavedMessage } from '@/services/backendService';
+import { listMessages, SavedMessage } from '../services/backendService';
 
-export default function SuppressedScreen() {
+export default function QueuedScreen() {
+  const navigation = useNavigation();
   const [messages, setMessages] = useState<SavedMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -22,8 +23,8 @@ export default function SuppressedScreen() {
     try {
       setError(null);
       const rows = await listMessages();
-      // Hide chat turns — only show real notification rows.
-      const suppressed = rows.filter((m) => m.source !== 'chat');
+      // Only show notifications that the LLM suppressed.
+      const suppressed = rows.filter((m) => m.status === 'suppressed');
       setMessages(suppressed);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load notifications');
@@ -60,7 +61,7 @@ export default function SuppressedScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>‹ Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Queued</Text>
@@ -114,67 +115,23 @@ export default function SuppressedScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    paddingTop: 70,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-  },
-  backText: {
-    fontSize: 16,
-    color: '#111',
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: '#555',
-  },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 6,
-    color: '#111',
-  },
-  emptyBody: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-  },
-  errorText: {
-    color: '#991b1b',
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 12,
-  },
+  container: { flex: 1, backgroundColor: '#fff', paddingTop: 70 },
+  header: { paddingHorizontal: 20, paddingBottom: 16 },
+  backText: { fontSize: 16, color: '#111', marginBottom: 8 },
+  title: { fontSize: 36, fontWeight: 'bold', marginBottom: 4 },
+  subtitle: { fontSize: 15, color: '#555' },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  emptyTitle: { fontSize: 18, fontWeight: '600', marginBottom: 6, color: '#111' },
+  emptyBody: { fontSize: 14, color: '#666', textAlign: 'center' },
+  errorText: { color: '#991b1b', fontSize: 14, textAlign: 'center', marginBottom: 12 },
   retryButton: {
     paddingVertical: 10,
     paddingHorizontal: 18,
     backgroundColor: '#111',
     borderRadius: 20,
   },
-  retryText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  listContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 30,
-  },
+  retryText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  listContent: { paddingHorizontal: 20, paddingBottom: 30 },
   card: {
     backgroundColor: '#f3f4f6',
     padding: 16,
@@ -193,19 +150,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  cardTime: {
-    fontSize: 12,
-    color: '#888',
-  },
-  cardSender: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111',
-    marginTop: 2,
-  },
-  cardContent: {
-    fontSize: 14,
-    color: '#374151',
-    marginTop: 4,
-  },
+  cardTime: { fontSize: 12, color: '#888' },
+  cardSender: { fontSize: 16, fontWeight: '700', color: '#111', marginTop: 2 },
+  cardContent: { fontSize: 14, color: '#374151', marginTop: 4 },
 });
