@@ -2,7 +2,7 @@ import BottomSheet, {
   BottomSheetScrollView,
   BottomSheetTextInput,
 } from '@gorhom/bottom-sheet';
-import { router } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -12,8 +12,8 @@ import {
   View,
 } from 'react-native';
 
-import { saveMessage } from '@/services/backendService';
-import { sendChatMessage, type ChatMessage } from '@/services/chatService';
+import { saveMessage } from '../services/backendService';
+import { sendChatMessage, ChatMessage } from '../services/chatService';
 
 const INITIAL_GREETING: ChatMessage = {
   role: 'assistant',
@@ -22,6 +22,7 @@ const INITIAL_GREETING: ChatMessage = {
 };
 
 export default function HomeScreen() {
+  const navigation = useNavigation();
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_GREETING]);
   const [isLoading, setIsLoading] = useState(false);
@@ -30,8 +31,6 @@ export default function HomeScreen() {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const scrollRef = useRef<any>(null);
 
-  // Sheet snaps to 50% or 90% of the screen height. Drag to switch between
-  // them, or pan it down past 50% to dismiss.
   const snapPoints = useMemo(() => ['40%', '60%'], []);
 
   const openChat = useCallback(() => {
@@ -54,8 +53,6 @@ export default function HomeScreen() {
     setIsLoading(true);
     setError(null);
 
-    // Fire-and-forget: persist the user's message to the backend.
-    // Doesn't block the UI or fail the chat if the backend is down.
     saveMessage({
       time: new Date().toISOString(),
       content: trimmed,
@@ -67,7 +64,6 @@ export default function HomeScreen() {
       const reply = await sendChatMessage(nextMessages);
       setMessages([...nextMessages, { role: 'assistant', content: reply }]);
 
-      // Persist the assistant's reply too.
       saveMessage({
         time: new Date().toISOString(),
         content: reply,
@@ -79,7 +75,6 @@ export default function HomeScreen() {
       setError(msg);
     } finally {
       setIsLoading(false);
-      // Scroll to bottom after the new message renders
       setTimeout(() => scrollRef.current?.scrollToEnd?.({ animated: true }), 50);
     }
   }, [input, messages, isLoading]);
@@ -97,7 +92,7 @@ export default function HomeScreen() {
 
         <TouchableOpacity
           style={styles.card}
-          onPress={() => router.push('/explore')}
+          onPress={() => navigation.navigate('Queued' as never)}
           activeOpacity={0.7}
         >
           <Text style={styles.cardTitle}>Queued</Text>
@@ -111,7 +106,7 @@ export default function HomeScreen() {
 
       <BottomSheet
         ref={bottomSheetRef}
-        index={-1} // start hidden
+        index={-1}
         snapPoints={snapPoints}
         enableDynamicSizing={false}
         enablePanDownToClose
@@ -201,38 +196,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     justifyContent: 'space-between',
   },
-  title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 18,
-    marginBottom: 16,
-    color: '#555',
-  },
+  title: { fontSize: 36, fontWeight: 'bold', marginBottom: 8 },
+  subtitle: { fontSize: 18, marginBottom: 16, color: '#555' },
   card: {
     backgroundColor: '#f3f4f6',
     padding: 16,
     borderRadius: 24,
     marginBottom: 12,
   },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
+  cardTitle: { fontSize: 16, fontWeight: '700', marginBottom: 6 },
   openChatButton: {
     backgroundColor: '#111',
     paddingVertical: 18,
     borderRadius: 28,
     alignItems: 'center',
   },
-  openChatButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  openChatButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   sheetBackground: {
     backgroundColor: '#fff',
     borderTopLeftRadius: 28,
@@ -255,58 +234,28 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  sheetTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  closeText: {
-    fontSize: 22,
-    color: '#666',
-  },
-  sheetSubtitle: {
-    fontSize: 15,
-    color: '#666',
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  messagesArea: {
-    flex: 1,
-  },
-  messagesContent: {
-    paddingVertical: 4,
-  },
+  sheetTitle: { fontSize: 22, fontWeight: '700' },
+  closeText: { fontSize: 22, color: '#666' },
+  sheetSubtitle: { fontSize: 15, color: '#666', marginTop: 8, marginBottom: 12 },
+  messagesArea: { flex: 1 },
+  messagesContent: { paddingVertical: 4 },
   bubble: {
     padding: 12,
     borderRadius: 20,
     marginBottom: 10,
     maxWidth: '85%',
   },
-  assistantBubble: {
-    backgroundColor: '#f3f4f6',
-    alignSelf: 'flex-start',
-  },
-  userBubble: {
-    backgroundColor: '#111',
-    alignSelf: 'flex-end',
-  },
-  assistantText: {
-    color: '#111',
-    fontSize: 15,
-  },
-  userText: {
-    color: '#fff',
-    fontSize: 15,
-  },
+  assistantBubble: { backgroundColor: '#f3f4f6', alignSelf: 'flex-start' },
+  userBubble: { backgroundColor: '#111', alignSelf: 'flex-end' },
+  assistantText: { color: '#111', fontSize: 15 },
+  userText: { color: '#fff', fontSize: 15 },
   errorBox: {
     backgroundColor: '#fee2e2',
     borderRadius: 12,
     padding: 10,
     marginBottom: 10,
   },
-  errorText: {
-    color: '#991b1b',
-    fontSize: 13,
-  },
+  errorText: { color: '#991b1b', fontSize: 13 },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -318,11 +267,7 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     paddingVertical: 8,
   },
-  input: {
-    flex: 1,
-    fontSize: 15,
-    paddingVertical: 8,
-  },
+  input: { flex: 1, fontSize: 15, paddingVertical: 8 },
   sendButton: {
     width: 42,
     height: 42,
@@ -332,12 +277,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: 8,
   },
-  sendButtonDisabled: {
-    backgroundColor: '#9ca3af',
-  },
-  sendButtonText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
-  },
+  sendButtonDisabled: { backgroundColor: '#9ca3af' },
+  sendButtonText: { color: '#fff', fontSize: 20, fontWeight: '700' },
 });
