@@ -1,24 +1,23 @@
 import { EmitterSubscription } from 'react-native';
 import {
-  notificationEmitter,
-  resolveNotification,
-  IncomingNotification,
+notificationEmitter,
+resolveNotification,
+IncomingNotification,
 } from '../bridge/NotificationModule';
 import { classifyNotification } from './ClassificationService';
 
-import { BACKEND_URL } from '@env';
 let subscription: EmitterSubscription | null = null;
 
 export type FilterEvent =
-  | { type: 'allowed'; notification: IncomingNotification }
-  | { type: 'suppressed'; notification: IncomingNotification }
-  | { type: 'error'; notification: IncomingNotification; error: Error };
+| { type: 'allowed'; notification: IncomingNotification }
+| { type: 'suppressed'; notification: IncomingNotification }
+| { type: 'error'; notification: IncomingNotification; error: Error };
 
 type FilterEventHandler = (event: FilterEvent) => void;
 
 export function startNotificationFilter(onEvent?: FilterEventHandler): void {
   if (subscription) {
-      return;
+    return;
   }
 
   // Listens to any 'onNotificationReceived' events emitted from the backend
@@ -40,29 +39,16 @@ export function startNotificationFilter(onEvent?: FilterEventHandler): void {
           onEvent?.({ type: 'allowed', notification });
         } else {
           resolveNotification(notification.id, 'suppress');
-          // Fetch POST request
-          fetch(`${BACKEND_URL}/messages`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              time: new Date(notification.time).toISOString(),
-              content: notification.content,
-              source: notification.source,
-              sender: notification.title,
-              status: 'suppressed',
-            }),
-          }).catch(err => console.error('Backend post failed:', err));
           onEvent?.({ type: 'suppressed', notification });
         }
       } catch (err) {
         onEvent?.({ type: 'error', notification, error: err as Error });
       }
-    },
-    );
+    }
+  );
 }
 
 export function stopNotificationFilter(): void {
   subscription?.remove();
   subscription = null;
 }
-

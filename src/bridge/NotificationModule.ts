@@ -32,3 +32,7 @@ export function isNotificationListenerEnabled(): Promise<boolean> {
 export function openNotificationListenerSettings(): void {
   NotificationModule.openNotificationListenerSettings();
 }
+
+export function getSuppressedMessages(): Promise<IncomingNotification[]> {
+  return NotificationModule.getSuppressedMessages();
+}

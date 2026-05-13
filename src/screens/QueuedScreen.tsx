@@ -10,11 +10,12 @@ import {
   View,
 } from 'react-native';
 
-import { listMessages, SavedMessage } from '../services/backendService';
+import { getSuppressedMessages, IncomingNotification } from '../bridge/NotificationModule';
 
 export default function QueuedScreen() {
   const navigation = useNavigation();
-  const [messages, setMessages] = useState<SavedMessage[]>([]);
+  const [messages, setMessages] = useState<IncomingNotification[]>([]);
+  //const [messages, setMessages] = useState<SavedMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,9 +23,8 @@ export default function QueuedScreen() {
   const load = useCallback(async () => {
     try {
       setError(null);
-      const rows = await listMessages();
       // Only show notifications that the LLM suppressed.
-      const suppressed = rows.filter((m) => m.status === 'suppressed');
+      const suppressed = await getSuppressedMessages();
       setMessages(suppressed);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load notifications');
