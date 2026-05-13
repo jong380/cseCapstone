@@ -4,6 +4,7 @@ import android.app.Notification
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import com.facebook.react.bridge.WritableNativeMap
+import android.content.pm.PackageManager
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -78,12 +79,21 @@ class NodiNotificationListenerService : NotificationListenerService() {
         val title = extras.getString(Notification.EXTRA_TITLE) ?: ""
         val content = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
 
+        // Fetch Application name instead of "com.android.etc etc"
+        val pm = applicationContext.packageManager
+        val appName = try {
+            val appInfo = pm.getApplicationInfo(sbn.packageName, 0)
+            pm.getApplicationLabel(appInfo).toString()
+        } catch (e: PackageManager.NameNotFoundException) {
+            sbn.packageName // Fallback to package name if it fails
+        }
+
         // This is the Android ROOM database object that holds the message
         val incomingMessage = Message(
             notifKey = sbn.key,
             time = sbn.postTime.toString(),
             content = content,
-            source = sbn.packageName,
+            source = appName,
             sender = title,
             status = "pending" // Default status before AI reviews it
         )
