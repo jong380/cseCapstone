@@ -22,6 +22,6 @@ interface MessageDao {
     fun getSuppressed(): List<Message>
 
     // Update messages
-    @Query("UPDATE messages SET status = :status WHERE source = :key")
+    @Query("UPDATE messages SET status = :status WHERE notifKey = :key")
     fun updateStatus(key: String, status: String)
 }

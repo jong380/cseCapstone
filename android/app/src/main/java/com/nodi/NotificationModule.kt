@@ -91,6 +91,33 @@ class NotificationModule(private val reactContext: ReactApplicationContext) :
         reactContext.startActivity(intent)
     }
 
+    // Call suppressed messages locally from ROOM database
+    @ReactMethod
+    fun getSuppressedMessages(promise: Promise) {
+        Thread {
+            try {
+                val db = NodiDatabase.getInstance(reactContext)
+                val messages = db.messageDao().getSuppressed()
+
+                // Convert Kotlin List into a React Native readable Array
+                val array = Arguments.createArray()
+                for (msg in messages) {
+                    val map = Arguments.createMap()
+                    map.putInt("id", msg.id)
+                    map.putString("time", msg.time)
+                    map.putString("content", msg.content)
+                    map.putString("source", msg.source)
+                    map.putString("sender", msg.sender)
+                    map.putString("status", msg.status)
+                    array.pushMap(map)
+                }
+                promise.resolve(array)
+            } catch (e: Exception) {
+                promise.reject("DB_READ_ERROR", e.message)
+            }
+        }.start()
+    }
+
     // Required by React Native's NativeEventEmitter
     @ReactMethod
     fun addListener(eventName: String) {}

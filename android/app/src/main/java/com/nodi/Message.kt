@@ -9,6 +9,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "messages")
 data class Message(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val notifKey: String,
     val time: String,
     val content: String,
     val source: String,
