@@ -46,7 +46,8 @@ export default function QueuedScreen() {
 
   const formatTime = (iso: string) => {
     try {
-      const d = new Date(iso);
+        const timestamp = parseInt(iso, 10);
+      const d = new Date(timestamp);
       return d.toLocaleString(undefined, {
         month: 'short',
         day: 'numeric',
