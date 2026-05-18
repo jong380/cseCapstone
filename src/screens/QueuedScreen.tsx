@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', paddingTop: 70 },
   header: { paddingHorizontal: 20, paddingBottom: 16 },
   backText: { fontSize: 16, color: '#111', marginBottom: 8 },
-  title: { fontSize: 36, fontWeight: 'bold', marginBottom: 4 },
+  title: { fontSize: 36, fontWeight: 'bold', marginBottom: 4, color: '#333333' },
   subtitle: { fontSize: 15, color: '#555' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   emptyTitle: { fontSize: 18, fontWeight: '600', marginBottom: 6, color: '#111' },

@@ -31,7 +31,7 @@ export default function HomeScreen() {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const scrollRef = useRef<any>(null);
 
-  const snapPoints = useMemo(() => ['40%', '60%'], []);
+  const snapPoints = useMemo(() => ['70%', '70%'], []);
 
   const openChat = useCallback(() => {
     bottomSheetRef.current?.snapToIndex(0);
@@ -84,11 +84,6 @@ export default function HomeScreen() {
       <View>
         <Text style={styles.title}>Nodi</Text>
         <Text style={styles.subtitle}>Your notifications</Text>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Important</Text>
-          <Text>Open to see</Text>
-        </View>
 
         <TouchableOpacity
           style={styles.card}
@@ -190,21 +185,21 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 70,
+    paddingTop: 30,
     paddingHorizontal: 20,
     paddingBottom: 30,
     backgroundColor: '#fff',
     justifyContent: 'space-between',
   },
-  title: { fontSize: 36, fontWeight: 'bold', marginBottom: 8 },
-  subtitle: { fontSize: 18, marginBottom: 16, color: '#555' },
+  title: { fontSize: 36, fontWeight: 'bold', marginBottom: 8, color: '#333333' },
+  subtitle: { fontSize: 18, marginBottom: 16, color: '#333333' },
   card: {
     backgroundColor: '#f3f4f6',
     padding: 16,
     borderRadius: 24,
     marginBottom: 12,
   },
-  cardTitle: { fontSize: 16, fontWeight: '700', marginBottom: 6 },
+  cardTitle: { fontSize: 16, fontWeight: '700', marginBottom: 6, color: '#333333' },
   openChatButton: {
     backgroundColor: '#111',
     paddingVertical: 18,
@@ -234,9 +229,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  sheetTitle: { fontSize: 22, fontWeight: '700' },
+  sheetTitle: { fontSize: 22, fontWeight: '700', color: '#333333' },
   closeText: { fontSize: 22, color: '#666' },
-  sheetSubtitle: { fontSize: 15, color: '#666', marginTop: 8, marginBottom: 12 },
+  sheetSubtitle: { fontSize: 15, color: '#333333', marginTop: 8, marginBottom: 12 },
   messagesArea: { flex: 1 },
   messagesContent: { paddingVertical: 4 },
   bubble: {
