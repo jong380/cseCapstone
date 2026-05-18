@@ -1,51 +1,42 @@
 export type Priority = 'important' | 'unimportant';
-import { GROQ_API_KEY } from '@env';
-// IMPORTANT: get your groq API key and place it into .env file in the project root.
-const apiKey: string = GROQ_API_KEY;
+import { InferenceSession, Tensor } from 'onnxruntime-react-native';
+import { BertTokenizer } from 'bert-tokenizer';
 
-/*import { GenerativeModel, GoogleGenerativeAI } from "@google/generative-ai";
+let session: InferenceSession | null = null;
+const tokenizer = new BertTokenizer();
 
-// model setup
-
-const genAI: GoogleGenerativeAI = new GoogleGenerativeAI(apiKey);
-const model: GenerativeModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });*/
-// import Groq from "groq-sdk";
-// const client = new Groq({ apiKey: "", dangerouslyAllowBrowser: true });
-// NEED TO FILL IN IF TESTING
-export async function classifyNotification(
-_source: string,
-_title: string,
-_content: string,
-): Promise<Priority> {
-/*
-const result = await model.generateContent(
-`From this notification information, tell me whether this notification is urgent or no.
-Classify a notification as an urgency if it's an emergency of any type, or anything time sensitive.
-Output one word; if urgent, 'important', otherwise, 'unimportant'. Here's the notification,
-${_source} ${_title}  ${_content}`);*/
-const result = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-method: 'POST',
-headers: {
-'Authorization': `Bearer ${apiKey}`,
-'Content-Type': 'application/json',
-},
-body: JSON.stringify({
-model: 'llama-3.1-8b-instant',
-messages: [{ role: 'user', content: `From this notification information, tell me whether this notification is urgent or no.
-Classify a notification as an urgency if it's an emergency of any type, or anything time sensitive.
-Output one word; if urgent, 'important', otherwise, 'unimportant'. Here's the notification,
-${_source} ${_title}  ${_content}`}],
-}),
-});
-
-const data = await result.json();
-const text = data.choices[0].message.content.trim().toLowerCase();
-// parse llm reply
-//const text = result.response.text().trim().toLowerCase();
-//const text = result.choices[0].message.content.trim().toLowerCase();
-if (text === 'important' || text === 'unimportant') {
-return text;
+async function loadModel(): Promise<InferenceSession> {
+  if (!session) {
+    session = await InferenceSession.create('model.onnx');
+  }
+  return session;
 }
-// default if needed
-return 'important';
+
+export async function classifyNotification(
+  _source: string,
+  _title: string,
+  _content: string,
+): Promise<Priority> {
+  const sess = await loadModel();
+
+  const text = `${_source} ${_title} ${_content}`;
+  const encoded = tokenizer.tokenize(text); // true = add special tokens [CLS] and [SEP]
+  const input_ids = encoded;
+  const attention_mask = new Array(input_ids.length).fill(1);
+
+
+  const seqLen = input_ids.length;
+  const feeds = {
+    input_ids: new Tensor('int64', BigInt64Array.from(input_ids.map(BigInt)), [1, seqLen]),
+    attention_mask: new Tensor('int64', BigInt64Array.from(attention_mask.map(BigInt)), [1, seqLen]),
+  };
+
+  const results = await sess.run(feeds);
+  const logits = results['logits'].data as Float32Array;
+
+  // argmax — find which label got highest score
+const predicted = logits.indexOf(Math.max(...Array.from(logits)));
+
+// predicted is 0-4 (representing stars 1-5)
+return predicted >= 3 ? 'important' : 'unimportant';
 }

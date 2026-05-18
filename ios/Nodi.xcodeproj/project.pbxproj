@@ -15,6 +15,10 @@
 		6132EF182BDFF13200BBE14D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 6132EF172BDFF13200BBE14D /* PrivacyInfo.xcprivacy */; };
 		7699B88040F8A987B510C191 /* libPods-Nodi-NodiTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 19F6CBCC0A4E27FBF8BF4A61 /* libPods-Nodi-NodiTests.a */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		C1DA876C44254CBE98697C3F /* model.onnx in Resources */ = {isa = PBXBuildFile; fileRef = 78F232AC87EF42F48F403BB4 /* model.onnx */; };
+		E94FA3BD1D924D26A6B13E73 /* model.onnx in Resources */ = {isa = PBXBuildFile; fileRef = 78F232AC87EF42F48F403BB4 /* model.onnx */; };
+		12DA670C4F034D8F9AD318B3 /* model.onnx.data in Resources */ = {isa = PBXBuildFile; fileRef = B4A95468221E416F9DE17014 /* model.onnx.data */; };
+		BB127A795F1B4A80845E684D /* model.onnx.data in Resources */ = {isa = PBXBuildFile; fileRef = B4A95468221E416F9DE17014 /* model.onnx.data */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -46,6 +50,8 @@
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Nodi/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		89C6BE57DB24E9ADA2F236DE /* Pods-Nodi-NodiTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Nodi-NodiTests.release.xcconfig"; path = "Target Support Files/Pods-Nodi-NodiTests/Pods-Nodi-NodiTests.release.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		78F232AC87EF42F48F403BB4 /* model.onnx */ = {isa = PBXFileReference; name = "model.onnx"; path = "../assets/model.onnx"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		B4A95468221E416F9DE17014 /* model.onnx.data */ = {isa = PBXFileReference; name = "model.onnx.data"; path = "../assets/model.onnx.data"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -125,6 +131,7 @@
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
+				9350C4E845D64C51A89E658D /* Resources */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -150,6 +157,16 @@
 			);
 			path = Pods;
 			sourceTree = "<group>";
+		};
+		9350C4E845D64C51A89E658D /* Resources */ = {
+			isa = "PBXGroup";
+			children = (
+				78F232AC87EF42F48F403BB4 /* model.onnx */,
+				B4A95468221E416F9DE17014 /* model.onnx.data */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+			path = "";
 		};
 /* End PBXGroup section */
 
@@ -237,6 +254,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E94FA3BD1D924D26A6B13E73 /* model.onnx in Resources */,
+				BB127A795F1B4A80845E684D /* model.onnx.data in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -247,6 +266,8 @@
 				6132EF182BDFF13200BBE14D /* PrivacyInfo.xcprivacy in Resources */,
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
+				C1DA876C44254CBE98697C3F /* model.onnx in Resources */,
+				12DA670C4F034D8F9AD318B3 /* model.onnx.data in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

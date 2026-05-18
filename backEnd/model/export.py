@@ -1,12 +1,22 @@
-from pathlib import Path
-from transformers import MobileBertTokenizer, MobileBertForSequenceClassification
-from transformers.onnx import export, FeaturesManager
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import torch
 
-tokenizer = MobileBertTokenizer.from_pretrained("google/mobilebert-uncased")
-model = MobileBertForSequenceClassification.from_pretrained("./mobilebert-notif")
+model_dir = "./mobilebert-notif"
+tokenizer = AutoTokenizer.from_pretrained(model_dir)
+model = AutoModelForSequenceClassification.from_pretrained(model_dir)
+model.eval()
 
-model_kind, model_onnx_config = FeaturesManager.get_supported_features_for_model_type("mobilebert", "sequence-classification")
-onnx_config = model_onnx_config(model.config)
+dummy = tokenizer("example text", return_tensors="pt")
 
-Path("./mobilebert-onnx").mkdir(exist_ok=True)
-export(tokenizer, model, onnx_config, 11, Path("./mobilebert-onnx/model.onnx"))
+torch.onnx.export(
+    model,
+    (dummy["input_ids"], dummy["attention_mask"]),
+    "model.onnx",
+    input_names=["input_ids", "attention_mask"],
+    output_names=["logits"],
+    dynamic_axes={
+        "input_ids": {0: "batch", 1: "seq"},
+        "attention_mask": {0: "batch", 1: "seq"},
+    },
+    opset_version=14,
+)

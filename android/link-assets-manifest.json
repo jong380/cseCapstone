@@ -1,0 +1,13 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "assets/model.onnx",
+      "sha1": "eb7d0ea6c4ec9ebaf01d88d07b464d19ea701b99"
+    },
+    {
+      "path": "assets/model.onnx.data",
+      "sha1": "7dedb53e97eccf5e869d1996060380b96017a04b"
+    }
+  ]
+}
