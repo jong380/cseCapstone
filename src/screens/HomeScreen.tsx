@@ -1,5 +1,4 @@
  import { setFocusMode, isDndAccessGranted, openDndAccessSettings } from '../bridge/NotificationModule';
-import { setFilterFocusMode } from '../logic/NotificationFilter';
 
 import BottomSheet, {
   BottomSheetScrollView,
@@ -37,7 +36,6 @@ export default function HomeScreen() {
         }
       }
       setFocusMode(next);
-      setFilterFocusMode(next);
       setFocusModeState(next);
     }
 
