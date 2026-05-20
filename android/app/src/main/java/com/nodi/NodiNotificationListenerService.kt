@@ -117,6 +117,11 @@ class NodiNotificationListenerService : NotificationListenerService() {
             return
         }
 
+        // No need to classify or store anything if focus mode is off
+        if (!focusModeActive) {
+            return
+        }
+
         val extras = sbn.notification.extras
         // We imported the Notification object btw
         // It allows us to use constants that simplify the actual key names

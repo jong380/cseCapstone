@@ -7,11 +7,6 @@ IncomingNotification,
 import { classifyNotification } from './ClassificationService';
 
 let subscription: EmitterSubscription | null = null;
-let focusModeEnabled = false;
-
-export function setFilterFocusMode(enabled: boolean): void {
-  focusModeEnabled = enabled;
-}
 
 export type FilterEvent =
 | { type: 'allowed'; notification: IncomingNotification }
@@ -40,8 +35,7 @@ export function startNotificationFilter(onEvent?: FilterEventHandler): void {
         );
 console.log('classified as:', priority);  // add this
         // sends the notification ID and LLM decision to backend
-        // suppression only applies when focus mode is active
-        if (priority === 'important' || !focusModeEnabled) {
+        if (priority === 'important') {
           resolveNotification(notification.id, 'allow');
           onEvent?.({ type: 'allowed', notification });
         } else {
