@@ -25,6 +25,7 @@ export function startNotificationFilter(onEvent?: FilterEventHandler): void {
   subscription = notificationEmitter.addListener(
     'onNotificationReceived',
     async (notification: IncomingNotification) => {
+        console.log('notification received:', notification);
       try {
         // mock LLM logic, classifies important or unimportant
         const priority = await classifyNotification(
@@ -32,7 +33,7 @@ export function startNotificationFilter(onEvent?: FilterEventHandler): void {
           notification.title,
           notification.content,
         );
-
+console.log('classified as:', priority);  // add this
         // sends the notification ID and LLM decision to backend
         if (priority === 'important') {
           resolveNotification(notification.id, 'allow');
@@ -43,6 +44,7 @@ export function startNotificationFilter(onEvent?: FilterEventHandler): void {
         }
       } catch (err) {
         onEvent?.({ type: 'error', notification, error: err as Error });
+        console.log('classification error:', err);
       }
     }
   );
