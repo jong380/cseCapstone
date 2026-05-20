@@ -92,6 +92,6 @@ export async function classifyNotification(
   const logits = results['logits'].data as Float32Array;
   const arr = Array.from(logits);
 
-  if (arr[4] > -2 || arr[3] > -1) return 'important';
+  if (arr[4] > -4|| arr[3] > -2) return 'important';
   return 'unimportant';
 }
