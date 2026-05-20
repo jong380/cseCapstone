@@ -43,9 +43,7 @@ const text = data.choices[0].message.content.trim().toLowerCase();
 // parse llm reply
 //const text = result.response.text().trim().toLowerCase();
 //const text = result.choices[0].message.content.trim().toLowerCase();
-if (text === 'important' || text === 'unimportant') {
-return text;
-}
-// default if needed
+if (text.includes('unimportant')) return 'unimportant';
+if (text.includes('important')) return 'important';
 return 'important';
 }

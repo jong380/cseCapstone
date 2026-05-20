@@ -1,3 +1,6 @@
+ import { setFocusMode, isDndAccessGranted, openDndAccessSettings } from '../bridge/NotificationModule';
+import { setFilterFocusMode } from '../logic/NotificationFilter';
+
 import BottomSheet, {
   BottomSheetScrollView,
   BottomSheetTextInput,
@@ -22,6 +25,22 @@ const INITIAL_GREETING: ChatMessage = {
 };
 
 export default function HomeScreen() {
+  const [focusMode, setFocusModeState] = useState(false);
+    // Checks DND permission before enabling focus mode, prompts user if not granted
+    async function handleFocusToggle() {
+      const next = !focusMode;
+      if (next) {
+        const granted = await isDndAccessGranted();
+        if (!granted) {
+          openDndAccessSettings();
+          return;
+        }
+      }
+      setFocusMode(next);
+      setFilterFocusMode(next);
+      setFocusModeState(next);
+    }
+
   const navigation = useNavigation();
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_GREETING]);
@@ -84,6 +103,14 @@ export default function HomeScreen() {
       <View>
         <Text style={styles.title}>Nodi</Text>
         <Text style={styles.subtitle}>Your notifications</Text>
+
+        <TouchableOpacity
+          style={[styles.toggle, focusMode && styles.toggleActive]}
+          onPress={handleFocusToggle}>
+          <Text style={styles.toggleText}>
+            {focusMode ? 'Focus Mode: ON' : 'Focus Mode: OFF'}
+          </Text>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.card}

@@ -1,6 +1,12 @@
 package com.nodi
 
 import android.app.Notification
+
+import androidx.core.app.NotificationCompat
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import com.facebook.react.bridge.WritableNativeMap
@@ -8,6 +14,7 @@ import android.content.pm.PackageManager
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import com.nodi.Message
 import com.nodi.NodiDatabase
@@ -21,20 +28,55 @@ class NodiNotificationListenerService : NotificationListenerService() {
     // service instance to call the resolveNotification() function
     companion object {
         private var instance: NodiNotificationListenerService? = null
+        var focusModeActive = false
+
+        // Lets NotificationModule look up a pending notification by key before passing it to resolveNotification
+        fun getPending(key: String): StoredNotification? = instance?.pending?.get(key)
 
         // Called from frontend (via NotificationModule) with the LLM's decision
-        fun resolveNotification(key: String, action: String) {
+        fun resolveNotification(key: String, action: String, originalSbn: StoredNotification?) {
             if (action == "suppress") {
                 instance?.cancelNotification(key)
-                // update status in ROOM
                 instance?.serviceScope?.launch {
-                    val db = NodiDatabase.getInstance(instance!!.applicationContext)
-                    db.messageDao().updateStatus(key, "suppressed")
+                    instance?.let {
+                        val msg = Message(
+                            notifKey = key,
+                            time = originalSbn?.time ?: "",
+                            content = originalSbn?.content ?: "",
+                            source = originalSbn?.appName ?: "",
+                            sender = originalSbn?.title ?: "",
+                            status = "suppressed"
+                        )
+                        NodiDatabase.getInstance(it.applicationContext)
+                            .messageDao().insert(msg)
+                    }
                 }
             }
-            // "allow" = do nothing, notification is already posted
+            else if (action == "allow" && focusModeActive && originalSbn != null) {
+                // In focus mode, DND has already suppressed the original notification
+                // so we cancel it and re-post on a channel that bypasses DND
+                instance?.cancelNotification(key)
+                instance?.repostNotification(originalSbn)
+            }
+            // "allow" with no focusModeActive = not in focus mode, notification is already posted
+            instance?.pending?.remove(key)
         }
     }
+
+    // Holds enough data to re-post a notification after DND suppresses it
+    data class StoredNotification(
+        val appName: String,
+        val title: String,
+        val content: String,
+        val time: String,
+    )
+
+    // Tracks pending notifications by key while waiting for the LLM decision
+    private val pending = mutableMapOf<String, StoredNotification>()
+
+    private val REPOST_CHANNEL_ID = "nodi_important"
+    private var channelCreated = false
+
 
     // same with instance but since services made by Android can be killed and restarted
     // while the app is still running, we create and destroy explicitly
@@ -46,6 +88,8 @@ class NodiNotificationListenerService : NotificationListenerService() {
     override fun onDestroy() {
         super.onDestroy()
         instance = null
+
+        serviceScope.cancel()
     }
 
     /*
@@ -88,19 +132,8 @@ class NodiNotificationListenerService : NotificationListenerService() {
             sbn.packageName // Fallback to package name if it fails
         }
 
-        // This is the Android ROOM database object that holds the message
-        val incomingMessage = Message(
-            notifKey = sbn.key,
-            time = sbn.postTime.toString(),
-            content = content,
-            source = appName,
-            sender = title,
-            status = "pending" // Default status before AI reviews it
-        )
-        // Insert message into ROOM database
-        serviceScope.launch {
-            NodiDatabase.getInstance(applicationContext).messageDao().insert(incomingMessage)
-        }
+        // Store the notification so we can re-post it if the LLM marks it important (used in focus mode)
+        pending[sbn.key] = StoredNotification(appName, title, content, sbn.postTime.toString())
 
         // This just makes a HashMap that the frontend can later turn into a JavaScript/TypeScript object
         val payload = WritableNativeMap().apply {
@@ -116,4 +149,39 @@ class NodiNotificationListenerService : NotificationListenerService() {
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {}
+
+    // Re-posts an important notification on a DND-bypassing channel
+    // The title shows the original app name so the user knows where it came from
+    fun repostNotification(original: StoredNotification) {
+        ensureChannelExists()
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        val notification = NotificationCompat.Builder(this, REPOST_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle(original.appName)
+            .setContentText("[Nodi] ${original.content}")
+            .setStyle(NotificationCompat.BigTextStyle().bigText("[Nodi] ${original.content}"))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .build()
+
+        manager.notify(System.currentTimeMillis().toInt(), notification)
+    }
+
+    // Creates the notification channel that bypasses DND, only needs to run once
+    private fun ensureChannelExists() {
+        if (channelCreated) {
+            return
+        }
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val channel = NotificationChannel(
+            REPOST_CHANNEL_ID,
+            "Nodi Important Notifications",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            setBypassDnd(true)
+        }
+        manager.createNotificationChannel(channel)
+        channelCreated = true
+    }
 }
