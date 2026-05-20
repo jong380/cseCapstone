@@ -21,7 +21,4 @@ interface MessageDao {
     @Query("SELECT * FROM messages WHERE status = 'suppressed' ORDER BY time DESC")
     fun getSuppressed(): List<Message>
 
-    // Update messages
-    @Query("UPDATE messages SET status = :status WHERE notifKey = :key")
-    fun updateStatus(key: String, status: String)
 }
