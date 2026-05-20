@@ -9,6 +9,7 @@ if (Platform.OS === 'android' && !NotificationModule) {
 export type IncomingNotification = {
   id: string;
   source: string;
+  appName: string;
   title: string;
   content: string;
   time: number;
@@ -35,4 +36,16 @@ export function openNotificationListenerSettings(): void {
 
 export function getSuppressedMessages(): Promise<IncomingNotification[]> {
   return NotificationModule.getSuppressedMessages();
+}
+
+export function setFocusMode(enabled: boolean): void {
+  NotificationModule.setFocusMode(enabled);
+}
+
+export function isDndAccessGranted(): Promise<boolean> {
+  return NotificationModule.isDndAccessGranted();
+}
+
+export function openDndAccessSettings(): void {
+  NotificationModule.openDndAccessSettings();
 }

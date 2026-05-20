@@ -2,6 +2,7 @@ package com.nodi
 
 // Android's way of navigating between screens or launching system pages
 // -> we're gonna use this to open the settings screen
+import android.app.NotificationManager
 import android.content.Intent
 // This gives us constants for system settings screens
 import android.provider.Settings
@@ -67,7 +68,40 @@ class NotificationModule(private val reactContext: ReactApplicationContext) :
     // This function forwards the notification ID and the LLM's decision to our service to be handled
     fun resolveNotification(notificationId: String, action: String) {
         // No need to import since they are in the same package
-        NodiNotificationListenerService.resolveNotification(notificationId, action)
+        val stored = NodiNotificationListenerService.getPending(notificationId)
+        NodiNotificationListenerService.resolveNotification(notificationId, action, stored)
+    }
+
+    // This exposes the function to the frontend
+    @ReactMethod
+    // Turns DND on (focus mode enabled) or off (focus mode disabled)
+    fun setFocusMode(enabled: Boolean) {
+        val manager = reactContext.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (enabled) {
+            // PRIORITY mode (not NONE) so that setBypassDnd(true) channels can still make sound
+            manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
+        } else {
+            manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
+        }
+        NodiNotificationListenerService.focusModeActive = enabled
+    }
+
+    // This exposes the function to the frontend
+    @ReactMethod
+    // Checks if the user has granted Nodi permission to control DND
+    fun isDndAccessGranted(promise: Promise) {
+        val manager = reactContext.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as NotificationManager
+        promise.resolve(manager.isNotificationPolicyAccessGranted)
+    }
+
+    // This exposes the function to the frontend
+    @ReactMethod
+    // Opens the system DND access settings page so the user can grant permission
+    fun openDndAccessSettings() {
+        val intent = Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        reactContext.startActivity(intent)
     }
 
     // This exposes the function to the frontend
