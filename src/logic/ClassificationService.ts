@@ -92,8 +92,6 @@ export async function classifyNotification(
   const logits = results['logits'].data as Float32Array;
   const arr = Array.from(logits);
 
-  // weighted score: higher labels = more important
-  const score = arr.reduce((sum, val, i) => sum + val * i, 0) / arr.reduce((sum, val) => sum + Math.abs(val), 0);
-  console.log('urgency score:', score);
-  return score > 0.3 ? 'important' : 'unimportant';
+  if (arr[4] > -2 || arr[3] > -1) return 'important';
+  return 'unimportant';
 }
