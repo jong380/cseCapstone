@@ -9,6 +9,7 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
   View,
@@ -102,13 +103,15 @@ export default function HomeScreen() {
         <Text style={styles.title}>Nodi</Text>
         <Text style={styles.subtitle}>Your notifications</Text>
 
-        <TouchableOpacity
-          style={[styles.toggle, focusMode && styles.toggleActive]}
-          onPress={handleFocusToggle}>
-          <Text style={styles.toggleText}>
-            {focusMode ? 'Focus Mode: ON' : 'Focus Mode: OFF'}
-          </Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginBottom: 16 }}>
+          <Text style={{ fontSize: 16, color: '#333' }}>Focus Mode</Text>
+          <Switch
+            value={focusMode}
+            onValueChange={handleFocusToggle}
+            trackColor={{ false: '#ccc', true: '#111' }}
+            thumbColor={'#fff'}
+          />
+        </View>
 
         <TouchableOpacity
           style={styles.card}

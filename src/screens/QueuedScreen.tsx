@@ -116,7 +116,7 @@ export default function QueuedScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingTop: 70 },
+  container: { flex: 1, backgroundColor: '#fff', paddingTop: 30 },
   header: { paddingHorizontal: 20, paddingBottom: 16 },
   backText: { fontSize: 16, color: '#111', marginBottom: 8 },
   title: { fontSize: 36, fontWeight: 'bold', marginBottom: 4, color: '#333333' },
