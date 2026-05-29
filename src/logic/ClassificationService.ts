@@ -1,17 +1,15 @@
+// We are using llama instead of onnx, so that we can run Qwen3 0.6B
+import { initLlama, LlamaContext } from 'llama.rn';
+import RNFS from 'react-native-fs'; // Add this import
+
+// These are the main strings that are used to classify notifications, and will be the outputs that Qwen (the LM) will use.
 export type Priority = 'important' | 'unimportant';
-import { InferenceSession, Tensor } from 'onnxruntime-react-native';
-import RNFS from 'react-native-fs';
 
-let session: InferenceSession | null = null;
-let vocab: Map<string, number> | null = null;
+// We only want to initialize one Qwen instance, so a sanity check will go here
+let llamaContext: LlamaContext | null = null;
+let isInitializing = false; // Prevent double initialization attempts
 
-async function loadVocab(): Promise<Map<string, number>> {
-  if (vocab) return vocab;
-  const text = await RNFS.readFileAssets('vocab.txt', 'utf8');
-  const lines = text.split('\n');
-  vocab = new Map(lines.map((token, i) => [token.trim(), i]));
-  return vocab;
-}
+// We keep all emergency keywords that may constitute an urgent notification
 function keywordUrgency(text: string): boolean {
      if (!text) return false;
   const urgent = ['emergency', 'amber', 'alert', 'urgent', 'missed call', 'fraud',
@@ -22,76 +20,92 @@ function keywordUrgency(text: string): boolean {
   return urgent.some(k => lower.includes(k));
 }
 
-function tokenize(text: string, vocab: Map<string, number>): { input_ids: number[], attention_mask: number[] } {
-  const UNK = 100, CLS = 101, SEP = 102;
-  const words = text.toLowerCase().trim().split(/\s+/).slice(0, 126);
+// Initalizes one classifier
+export async function initializeClassifier(): Promise<void> {
+  if (llamaContext || isInitializing) return;
+  isInitializing = true;
 
-  const ids: number[] = [CLS];
-  for (const word of words) {
-    if (vocab.has(word)) {
-      ids.push(vocab.get(word)!);
-    } else {
-      // try WordPiece subword splitting
-      let remaining = word;
-      let found = false;
-      const subwords: number[] = [];
+  // Dynamically resolve the absolute path to the app's documents folder (This is where qwen is stored on the device)
+  const modelPath = `${RNFS.DocumentDirectoryPath}/qwen.gguf`;
+  console.log("Checking for model file at:", modelPath);
 
-      while (remaining.length > 0) {
-        let matched = false;
-        for (let end = remaining.length; end > 0; end--) {
-          const substr = subwords.length === 0 ? remaining.slice(0, end) : `##${remaining.slice(0, end)}`;
-          if (vocab.has(substr)) {
-            subwords.push(vocab.get(substr)!);
-            remaining = remaining.slice(end);
-            matched = true;
-            break;
-          }
-        }
-        if (!matched) { subwords.push(UNK); break; }
-      }
-      ids.push(...subwords);
+  // We expect the model to already be in Nodi files, see reference in README for how to install Qwen3
+  try {
+    const fileExists = await RNFS.exists(modelPath);
+    if (!fileExists) {
+      console.error(`Model file not found at ${modelPath}. Run adb commands again!`);
+      isInitializing = false;
+      return;
     }
+
+    // More sanity checks to see if model is there.
+    const fileStat = await RNFS.stat(modelPath);
+    console.log(`Model file found! Size: ${(parseInt(fileStat.size) / (1024 * 1024)).toFixed(2)} MB`);
+
+    // We initalize Llama and only use limit to 2 cores, so that we don't run out of memory or prevent app freezing
+    console.log("Initializing Llama engine natively...");
+    llamaContext = await initLlama({
+      model: modelPath,
+      use_mlock: true,
+      n_ctx: 512,
+      n_threads: 2,
+    });
+    // Make sure Qwen is loaded from local file that is stored on device.
+    console.log("SUCCESS: Qwen GGUF model loaded into memory!");
+  } catch (e) {
+    console.error("Failed to load Llama model:", e);
+  } finally {
+    isInitializing = false;
   }
-  ids.push(SEP);
-
-  const trimmed = ids.slice(0, 128);
-  return { input_ids: trimmed, attention_mask: trimmed.map(() => 1) };
 }
-
-async function loadModel(): Promise<InferenceSession> {
-  if (!session) {
-    const destPath = `${RNFS.DocumentDirectoryPath}/model.onnx`;
-    const exists = await RNFS.exists(destPath);
-    if (!exists) {
-      await RNFS.copyFileAssets('model.onnx', destPath);
-    }
-    session = await InferenceSession.create(`file://${destPath}`);
-  }
-  return session;
-}
-
+// Classifies a notification based on its source, title, and content. We don't need to tokenize words anymore since Qwen is better and can be edited via prompting.
 export async function classifyNotification(
-  _source: string,
-  _title: string,
-  _content: string,
+  source: string,
+  title: string,
+  content: string,
 ): Promise<Priority> {
-     // keyword check first
-      if (keywordUrgency(text)) return 'important';
+  const combined = `${source} ${title} ${content}`;
 
-  const [sess, v] = await Promise.all([loadModel(), loadVocab()]);
-  const text = `title: ${_title ?? ''} | content: ${_content ?? ''} | sender: ${_source ?? ''} | source: ${_source ?? ''}`;
-  const { input_ids, attention_mask } = tokenize(text, v);
-  const seqLen = input_ids.length;
+  if (keywordUrgency(combined)) return 'important';
 
-  const feeds = {
-    input_ids: new Tensor('int64', BigInt64Array.from(input_ids.map(BigInt)), [1, seqLen]),
-    attention_mask: new Tensor('int64', BigInt64Array.from(attention_mask.map(BigInt)), [1, seqLen]),
-  };
+  // Sanity Check to make sure Llama/Qwen is ready or not.
+  if (!llamaContext) {
+    console.warn("Llama context not ready. Defaulting to unimportant.");
+    return 'unimportant';
+  }
+  // This is the prompt that Qwen3 follows to classify notifications. We want to tune this to balance the need for seperating our notifications
+  // Into Important and Unimportant.
+  const prompt = `<|im_start|>system
+You are a highly intelligent notification classifier. Output ONLY "important" or "unimportant". Do not explain your reasoning.
 
-  const results = await sess.run(feeds);
-  const logits = results['logits'].data as Float32Array;
-  const arr = Array.from(logits);
+RULES FOR "important":
+- Real human emergencies, health, or physical safety.
+- Time-critical logistics (flights boarding, lockouts, being stranded).
+- Real security breaches or server outages.
 
-  if (arr[4] > -4|| arr[3] > -2) return 'important';
-  return 'unimportant';
+RULES FOR "unimportant":
+- ALL marketing, food delivery, or store promotions (IGNORE buzzwords like "URGENT", "CRITICAL", or "ALERT" if it is just an ad).
+- Social media likes, casual group chats, or media updates.
+- Routine system background updates.<|im_end|>
+<|im_start|>user
+Source: ${source} | Title: ${title} | Content: ${content}<|im_end|>
+<|im_start|>assistant
+`;
+
+  try {
+    const result = await llamaContext.completion({
+      prompt,
+      n_predict: 5,
+      temperature: 0.0,
+    });
+    // We can see what Qwen thinks, and classifies each notification through this debugging log.
+    const output = result.text.toLowerCase().trim();
+    return output.includes('important') && !output.includes('unimportant')
+      ? 'important'
+      : 'unimportant';
+
+  } catch (e) {
+    console.error('Llama inference error:', e);
+    return 'unimportant';
+  }
 }
