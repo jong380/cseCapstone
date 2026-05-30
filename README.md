@@ -21,29 +21,35 @@ src/
   logic/
     NotificationFilter.ts             -- orchestrates notifications through the LLM
     ClassificationService.ts          -- LLM classification (swap this out for real LLM)
+  screens/
+    HomeScreen.tsx                    -- main UI screen
+    QueuedScreen.tsx                  -- UI screen for queued notifications
+  services/
+    backendService.ts                -- backend POST requests
+    chatService.ts                   -- chat with Groq's LLM API (May be replaced by Qwen we will see)
+
 
 App.tsx                               -- UI entry point
 ```
 
-## Project Setup
-This project requires an API KEY to classify notifications. Get your free API Key here: https://console.groq.com
+## 🤖 Local AI Model Installation (Qwen GGUF)
 
-Afterwards, Create a `.env` file in the project root using this template: ```GROQ_API_KEY=your_api_key_here```
+Nodi processes notification contexts locally using an optimized, on-device large language model (Qwen3 0.6B). 
+You must install Qwen3 onto your device before using Nodi.
 
-Also, for proper notification fetching, add this line as well in `.env`:
-`BACKEND_URL=http://localhost:3000/`
+### 1. Download the Base Weights
+Download the Qwen3 0.6B Chat parameter GGUF file.
+* **Model Target File:** `qwen.gguf` (Recommended size: ~380 MB)
 
-## Running the Project
+### 2. Push Asset to Android Storage Filepath
+Ensure your target device/emulator is plugged in with **USB Debugging Enabled**, then copy the downloaded model directly into the Nodi local application directory using (`adb`):
 
-Open 3 terminals from the project root:
+```bash
+# Verify your device is detected:
+adb devices
 
-| Terminal | Command | Description |
-|----------|---------|-------------|
-| 1 | `npm start` | Starts Metro bundler |
-| 2 | `cd server && npm start` | Starts Express backend |
-| 3 (once per session) | `adb reverse tcp:3000 tcp:3000` | Forwards backend port to physical device |
-
-> **Note:** Terminal 3 is only needed when testing on a physical Android device. Re-run it each time you reconnect your device via USB.
+# Install Qwen onto device:
+adb push /path/to/your/downloaded/qwen.gguf /data/user/0/com.nodi/files/qwen.gguf
 
 ## Testing
 
