@@ -32,7 +32,7 @@ src/
 App.tsx                               -- UI entry point
 ```
 
-## 🤖 Local AI Model Installation (Qwen GGUF)
+## Local AI Model Installation (Qwen GGUF)
 
 Nodi processes notification contexts locally using an optimized, on-device large language model (Qwen3 0.6B). 
 You must install Qwen3 onto your device before using Nodi.
