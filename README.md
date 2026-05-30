@@ -44,18 +44,18 @@ Download the Qwen3 0.6B Chat parameter GGUF file.
 ### 2. Push Asset to Android Storage Filepath
 Ensure your target device/emulator is plugged in with **USB Debugging Enabled**, then copy the downloaded model directly into the Nodi local application directory using (`adb`):
 
-```bash
+```
 # Verify your device is detected:
 adb devices
 
 # Install Qwen onto device:
 adb push /path/to/your/downloaded/qwen.gguf /data/user/0/com.nodi/files/qwen.gguf
-
+```
 ## Testing
 
 Grant notification access to the app:
 
-```bash
+```
 adb shell am start -a android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS
 ```
 
