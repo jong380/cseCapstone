@@ -104,7 +104,7 @@ export default function HomeScreen() {
         <Text style={styles.subtitle}>Your notifications</Text>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginBottom: 16 }}>
-          <Text style={{ fontSize: 16, color: '#333' }}>Focus Mode</Text>
+          <Text style={{ fontSize: 16, color: '#333' }}>Enable Nodi</Text>
           <Switch
             value={focusMode}
             onValueChange={handleFocusToggle}
@@ -118,8 +118,8 @@ export default function HomeScreen() {
           onPress={() => navigation.navigate('Queued' as never)}
           activeOpacity={0.7}
         >
-          <Text style={styles.cardTitle}>Queued</Text>
-          <Text>Open to see</Text>
+          <Text style={styles.cardTitle}>Blocked</Text>
+          <Text>Tap to see</Text>
         </TouchableOpacity>
       </View>
 
