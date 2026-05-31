@@ -1,6 +1,7 @@
 // We are using llama instead of onnx, so that we can run Qwen3 0.6B
 import { initLlama, LlamaContext } from 'llama.rn';
 import RNFS from 'react-native-fs';
+import { getPreferences } from './PreferenceStore';
 
 export type Priority = 'important' | 'unimportant';
 
@@ -136,7 +137,12 @@ export async function classifyNotification(
   console.log(`Routing to Qwen LLM for deep analysis...`);
 
   // Prompt that gives Qwen specific instructions on how to classify notifications
-  const prompt = `Classify the following notifications as either "important" or "unimportant".
+ const preferences = await getPreferences();
+ const prefLine = preferences
+   ? `\nThe user's personal preferences: ${preferences}\n`
+   : '';
+
+ const prompt = `Classify the following notifications as either "important" or "unimportant".${prefLine}
 
 Source: Mom | Title: Mom | Content: I am at the hospital right now, please call me.
 Answer: important
@@ -172,4 +178,7 @@ Answer:`;
   } finally {
     isProcessing = false;
   }
+}
+export function getLlamaContext() {
+  return llamaContext;
 }
