@@ -65,7 +65,7 @@ export default function QueuedScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>‹ Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Queued</Text>
+        <Text style={styles.title}>Blocked</Text>
         <Text style={styles.subtitle}>Notifications Nodi filtered out for you.</Text>
       </View>
 
