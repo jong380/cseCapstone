@@ -15,6 +15,8 @@ import {
   View,
 } from 'react-native';
 
+// We import notifee here so app can run in background
+import notifee from '@notifee/react-native';
 import { saveMessage } from '../services/backendService';
 import { sendChatMessage, ChatMessage } from '../services/chatService';
 import { getPreferences, savePreferences, clearPreferences } from '../logic/PreferenceStore';
@@ -37,9 +39,37 @@ export default function HomeScreen() {
         openDndAccessSettings();
         return;
       }
+
+      // We connect Notifee to the focus mode status, only leaving it
+      // running in the background until turned off
+      const channelId = await notifee.createChannel({
+        id: 'nodi_focus',
+        name: 'Focus Mode Status',
+      });
+
+      // Start the Foreground Service to keep JS awake
+      await notifee.displayNotification({
+        title: 'Nodi Focus Mode Active',
+        body: 'Qwen AI is actively filtering your notifications.',
+        android: {
+          channelId,
+          asForegroundService: true,
+          ongoing: true, // Makes it sticky so the user can't swipe it away
+        },
+      });
+
+      // Usual notification intercept logic
+      setFocusMode(true);
+      setFocusModeState(true);
+
+    } else {
+      // Kill service when turned off
+      await notifee.stopForegroundService();
+
+      // Stop intercepting notifications
+      setFocusMode(false);
+      setFocusModeState(false);
     }
-    setFocusMode(next);
-    setFocusModeState(next);
   }
 
   const navigation = useNavigation();
