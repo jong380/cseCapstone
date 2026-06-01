@@ -39,6 +39,10 @@ export default function HomeScreen() {
         openDndAccessSettings();
         return;
       }
+    const settings = await notifee.requestPermission();
+    if (settings.authorizationStatus === 0) {
+          return;
+        }
 
       // We connect Notifee to the focus mode status, only leaving it
       // running in the background until turned off
