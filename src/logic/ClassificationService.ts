@@ -88,7 +88,7 @@ export async function initializeClassifier(): Promise<void> {
       model: modelPath,
       use_mlock: false,
       n_ctx: 512,
-      n_threads: 2,     // Limit to 2 cores to keep React Native responsive
+      n_threads: 4,     // Limit to 2 cores to keep React Native responsive
     });
     console.log("SUCCESS: Qwen GGUF model loaded into memory!");
   } catch (e) {
