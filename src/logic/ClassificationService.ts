@@ -5,9 +5,9 @@ import { getPreferences } from './PreferenceStore';
 
 export type Priority = 'important' | 'unimportant';
 
-let llamaContext: LlamaContext | null = null;
 let isInitializing = false;
 let isProcessing = false;  // Prevents the app from freezing if 5 notifications arrive at once
+let llamaContext: LlamaContext | null = null;
 
 const CRITICAL_APPS = new Set([
 'com.pagerduty.android',
@@ -74,8 +74,14 @@ export async function initializeClassifier(): Promise<void> {
 
   // Sanity check to look for Qwen local installation
   const modelPath = `${RNFS.DocumentDirectoryPath}/qwen.gguf`;
-  console.log("Checking for model file at:", modelPath);
-
+  
+  // Only copy if it doesn't already exist
+  const exists = await RNFS.exists(modelPath);
+  if (!exists) {
+    console.log("Copying model from assets to document directory...");
+    await RNFS.copyFileAssets('qwen.gguf', modelPath);
+  }
+  
   try {
     const fileExists = await RNFS.exists(modelPath);
     if (!fileExists) {
@@ -85,10 +91,9 @@ export async function initializeClassifier(): Promise<void> {
     }
     console.log("Initializing Llama engine natively...");
     llamaContext = await initLlama({
-      model: modelPath,
-      use_mlock: false,
-      n_ctx: 512,
-      n_threads: 4,     // Limit to 2 cores to keep React Native responsive
+        model: modelPath, // Ensure this points to your file in the assets/storage
+        n_ctx: 1024,        // Sufficient context for your short notification classification
+        n_gpu_layers: 99,    // Limit to 2 cores to keep React Native responsive
     });
     console.log("SUCCESS: Qwen GGUF model loaded into memory!");
   } catch (e) {
@@ -125,29 +130,18 @@ async function processAiQueue() {
     const preferences = await getPreferences();
     const prefLine = preferences ? `\nThe user's personal filtering preferences: ${preferences}\n` : '';
 
-    const prompt = `<|im_start|>system
-You are a strict notification sorting API. Evaluate the incoming text message.
-Your internal monologue must be brief. You must append your absolute final decision wrapped exactly in bracket keys at the very end: [VERDICT: ALLOW] or [VERDICT: SUPPRESS].${prefLine}
-
-Rules:
-- Personal human communication, direct chat messages, DMs, calendar events, Group chats, team channels, or flight changes must be ALLOWed.
-- Automated logs, app status pings, shopping alerts, or system status must be SUPPRESSed.
-- If the Source is an SMS/Chat app and the Title is a phone number or contact name, it is a human text message and MUST be ALLOWed.
-<|im_end|>
+   const prompt = `<|im_start|>system
+You are a notification assistant. Output only 0 for unimportant or 1 for important.<|im_end|>
 <|im_start|>user
-Source: messages | Title: Mom | Content: Are you coming home for dinner?
-<|im_end|>
-<|im_start|>assistant
-<THINK>This is a direct text message from a personal human contact asking a question.</THINK> [VERDICT: ALLOW]<|im_end|>
-<|im_start|>user
-Source: ${item.source} | Title: ${item.title} | Content: ${item.content}
-<|im_end|>
+User Profile: ${preferences}
+Source: ${item.source}
+Title: ${item.title}
+Content: ${item.content}<|im_end|>
 <|im_start|>assistant
 `;
-
     const result = await llamaContext!.completion({
       prompt,
-      n_predict: 200,
+      n_predict: 5,
       temperature: 0.0,
       stop: ["<|im_end|>"],
     });
@@ -155,13 +149,8 @@ Source: ${item.source} | Title: ${item.title} | Content: ${item.content}
     const output = result.text.trim();
     console.log(`Qwen raw output:\n${output}`);
 
-    if (output.includes("[VERDICT: ALLOW]")) {
-      item.resolve('important');
-    } else if (output.includes("[VERDICT: SUPPRESS]")) {
-      item.resolve('unimportant');
-    } else {
-      item.resolve(output.toLowerCase().includes('allow') ? 'important' : 'unimportant');
-    }
+    const verdict = output.trim();
+item.resolve(verdict === '1' ? 'important' : 'unimportant');
 
   } catch (e) {
     console.error('Llama inference error:', e);
