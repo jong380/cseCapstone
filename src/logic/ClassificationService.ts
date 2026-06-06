@@ -79,9 +79,8 @@ export async function initializeClassifier(): Promise<void> {
   try {
     const fileExists = await RNFS.exists(modelPath);
     if (!fileExists) {
-      console.error(`Model file not found at ${modelPath}`);
-      isInitializing = false;
-      return;
+        console.log("Copying model from assets to document directory...");
+        await RNFS.copyFileAssets('nodi_final_v1.gguf', modelPath);
     }
     console.log("Initializing Llama engine natively...");
     llamaContext = await initLlama({
@@ -127,28 +126,33 @@ async function processAiQueue() {
 
     const prompt = `<|im_start|>system
 You are a strict notification sorting API. Evaluate the incoming text message.
-Your internal monologue must be brief. You must append your absolute final decision wrapped exactly in bracket keys at the very end: [VERDICT: ALLOW] or [VERDICT: SUPPRESS].${prefLine}
+Your internal monologue must be extremely brief. You must append your absolute final decision wrapped exactly in bracket keys at the very end: [VERDICT: ALLOW] or [VERDICT: SUPPRESS].${prefLine ? '\n' + prefLine : ''}
 
 Rules:
-- Personal human communication, direct chat messages, DMs, calendar events, Group chats, team channels, or flight changes must be ALLOWed.
-- Automated logs, app status pings, shopping alerts, or system status must be SUPPRESSed.
+- Personal human communication, direct chat messages, DMs, calendar events, group chats, team channels, or flight changes must be ALLOWed.
+- Automated logs, app status pings, shopping alerts, promotions, or system status must be SUPPRESSed.
 - If the Source is an SMS/Chat app and the Title is a phone number or contact name, it is a human text message and MUST be ALLOWed.
 <|im_end|>
 <|im_start|>user
 Source: messages | Title: Mom | Content: Are you coming home for dinner?
 <|im_end|>
 <|im_start|>assistant
-<THINK>This is a direct text message from a personal human contact asking a question.</THINK> [VERDICT: ALLOW]<|im_end|>
+<THINK>Direct text from personal contact.</THINK> [VERDICT: ALLOW]<|im_end|>
+<|im_start|>user
+Source: Target | Title: Promo | Content: 20% off all items today only!
+<|im_end|>
+<|im_start|>assistant
+<THINK>Automated shopping promotion.</THINK> [VERDICT: SUPPRESS]<|im_end|>
 <|im_start|>user
 Source: ${item.source} | Title: ${item.title} | Content: ${item.content}
 <|im_end|>
 <|im_start|>assistant
-`;
+<THINK>`;
 
     const result = await llamaContext!.completion({
       prompt,
       n_predict: 200,
-      temperature: 0.0,
+      temperature: 0.1,
       stop: ["<|im_end|>"],
     });
 
