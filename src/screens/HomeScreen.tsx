@@ -33,14 +33,18 @@ export default function HomeScreen() {
 
   async function handleFocusToggle() {
     const next = !focusMode;
+    setFocusModeState(next);
+
     if (next) {
       const granted = await isDndAccessGranted();
       if (!granted) {
         openDndAccessSettings();
+        setFocusModeState(false);
         return;
       }
     const settings = await notifee.requestPermission();
     if (settings.authorizationStatus === 0) {
+          setFocusModeState(false);
           return;
         }
 
