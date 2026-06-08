@@ -1,11 +1,11 @@
- import { setFocusMode, isDndAccessGranted, openDndAccessSettings } from '../bridge/NotificationModule';
+import { setFocusMode, isDndAccessGranted, openDndAccessSettings } from '../bridge/NotificationModule';
 
 import BottomSheet, {
   BottomSheetScrollView,
   BottomSheetTextInput,
 } from '@gorhom/bottom-sheet';
 import { useNavigation } from '@react-navigation/native';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'; // ← added useEffect
 import {
   ActivityIndicator,
   StyleSheet,
@@ -15,8 +15,11 @@ import {
   View,
 } from 'react-native';
 
+// We import notifee here so app can run in background
+import notifee from '@notifee/react-native';
 import { saveMessage } from '../services/backendService';
 import { sendChatMessage, ChatMessage } from '../services/chatService';
+import { getPreferences, savePreferences, clearPreferences } from '../logic/PreferenceStore';
 
 const INITIAL_GREETING: ChatMessage = {
   role: 'assistant',
@@ -26,19 +29,56 @@ const INITIAL_GREETING: ChatMessage = {
 
 export default function HomeScreen() {
   const [focusMode, setFocusModeState] = useState(false);
-    // Checks DND permission before enabling focus mode, prompts user if not granted
-    async function handleFocusToggle() {
-      const next = !focusMode;
-      if (next) {
-        const granted = await isDndAccessGranted();
-        if (!granted) {
-          openDndAccessSettings();
+  const [currentPreferences, setCurrentPreferences] = useState<string | null>(null); // ← NEW
+
+  async function handleFocusToggle() {
+    const next = !focusMode;
+    setFocusModeState(next);
+
+    if (next) {
+      const granted = await isDndAccessGranted();
+      if (!granted) {
+        openDndAccessSettings();
+        setFocusModeState(false);
+        return;
+      }
+    const settings = await notifee.requestPermission();
+    if (settings.authorizationStatus === 0) {
+          setFocusModeState(false);
           return;
         }
-      }
-      setFocusMode(next);
-      setFocusModeState(next);
+
+      // We connect Notifee to the focus mode status, only leaving it
+      // running in the background until turned off
+      const channelId = await notifee.createChannel({
+        id: 'nodi_focus',
+        name: 'Focus Mode Status',
+      });
+
+      // Start the Foreground Service to keep JS awake
+      await notifee.displayNotification({
+        title: 'Nodi Focus Mode Active',
+        body: 'Qwen AI is actively filtering your notifications.',
+        android: {
+          channelId,
+          asForegroundService: true,
+          ongoing: true, // Makes it sticky so the user can't swipe it away
+        },
+      });
+
+      // Usual notification intercept logic
+      setFocusMode(true);
+      setFocusModeState(true);
+
+    } else {
+      // Kill service when turned off
+      await notifee.stopForegroundService();
+
+      // Stop intercepting notifications
+      setFocusMode(false);
+      setFocusModeState(false);
     }
+  }
 
   const navigation = useNavigation();
   const [input, setInput] = useState('');
@@ -50,6 +90,11 @@ export default function HomeScreen() {
   const scrollRef = useRef<any>(null);
 
   const snapPoints = useMemo(() => ['70%', '70%'], []);
+
+  // ← NEW: load saved preferences on mount
+  useEffect(() => {
+    getPreferences().then(prefs => setCurrentPreferences(prefs));
+  }, []);
 
   const openChat = useCallback(() => {
     bottomSheetRef.current?.snapToIndex(0);
@@ -79,12 +124,30 @@ export default function HomeScreen() {
     });
 
     try {
-      const reply = await sendChatMessage(nextMessages);
-      setMessages([...nextMessages, { role: 'assistant', content: reply }]);
+      const reply = await sendChatMessage(nextMessages, currentPreferences); // ← added currentPreferences
+
+      // ← NEW: parse PREFERENCES: and CLEAR_PREFERENCES tags from reply
+      let displayReply = reply;
+
+      if (reply.includes('CLEAR_PREFERENCES')) {
+        await clearPreferences();
+        setCurrentPreferences(null);
+        displayReply = reply.replace('CLEAR_PREFERENCES', '').trim();
+      } else if (reply.includes('PREFERENCES:')) {
+        const prefLine = reply.split('\n').find(l => l.startsWith('PREFERENCES:'));
+        if (prefLine) {
+          const extracted = prefLine.replace('PREFERENCES:', '').trim();
+          await savePreferences(extracted);
+          setCurrentPreferences(extracted);
+        }
+        displayReply = reply.split('\n').filter(l => !l.startsWith('PREFERENCES:')).join('\n').trim();
+      }
+
+      setMessages([...nextMessages, { role: 'assistant', content: displayReply }]);
 
       saveMessage({
         time: new Date().toISOString(),
-        content: reply,
+        content: displayReply,
         source: 'chat',
         sender: 'assistant',
       });
@@ -95,7 +158,7 @@ export default function HomeScreen() {
       setIsLoading(false);
       setTimeout(() => scrollRef.current?.scrollToEnd?.({ animated: true }), 50);
     }
-  }, [input, messages, isLoading]);
+  }, [input, messages, isLoading, currentPreferences]); // ← added currentPreferences to deps
 
   return (
     <View style={styles.container}>

@@ -117,6 +117,11 @@ class NodiNotificationListenerService : NotificationListenerService() {
             return
         }
 
+        // Kill persistent notifications that are not clearable
+        if (!sbn.isClearable || (sbn.notification.flags and Notification.FLAG_ONGOING_EVENT) != 0) {
+            return
+        }
+
         // No need to classify or store anything if focus mode is off
         if (!focusModeActive) {
             return
@@ -143,7 +148,7 @@ class NodiNotificationListenerService : NotificationListenerService() {
         // This just makes a HashMap that the frontend can later turn into a JavaScript/TypeScript object
         val payload = WritableNativeMap().apply {
             putString("id", sbn.key)
-            putString("source", sbn.packageName)
+            putString("source", appName)
             putString("title", title)
             putString("content", content)
             putDouble("time", sbn.postTime.toDouble())
