@@ -73,7 +73,7 @@ export async function initializeClassifier(): Promise<void> {
   isInitializing = true;
 
   // Sanity check to look for Qwen local installation
-  const modelPath = `${RNFS.DocumentDirectoryPath}/qwen.gguf`;
+  const modelPath = `${RNFS.DocumentDirectoryPath}/qwen3-0.6b_v2.gguf`;
   console.log("Checking for model file at:", modelPath);
 
   try {
@@ -125,29 +125,13 @@ async function processAiQueue() {
     const prefLine = preferences ? `\nThe user's personal filtering preferences: ${preferences}\n` : '';
 
     const prompt = `<|im_start|>system
-You are a strict notification sorting API. Evaluate the incoming text message.
-Your internal monologue must be extremely brief. You must append your absolute final decision wrapped exactly in bracket keys at the very end: [VERDICT: ALLOW] or [VERDICT: SUPPRESS].${prefLine ? '\n' + prefLine : ''}
-
-Rules:
-- Personal human communication, direct chat messages, DMs, calendar events, group chats, team channels, or flight changes must be ALLOWed.
-- Automated logs, app status pings, shopping alerts, promotions, or system status must be SUPPRESSed.
-- If the Source is an SMS/Chat app and the Title is a phone number or contact name, it is a human text message and MUST be ALLOWed.
-<|im_end|>
+You are an on-device notification assistant. Analyze the incoming notification and the user's profile, then output a binary priority rating: 0 for low priority/ignore, 1 for high priority/urgent. Output only the digit 0 or 1.<|im_end|>
 <|im_start|>user
-Source: messages | Title: Mom | Content: Are you coming home for dinner?
-<|im_end|>
-<|im_start|>assistant
-<THINK>Direct text from personal contact.</THINK> [VERDICT: ALLOW]<|im_end|>
-<|im_start|>user
-Source: Target | Title: Promo | Content: 20% off all items today only!
-<|im_end|>
-<|im_start|>assistant
-<THINK>Automated shopping promotion.</THINK> [VERDICT: SUPPRESS]<|im_end|>
-<|im_start|>user
-Source: ${item.source} | Title: ${item.title} | Content: ${item.content}
-<|im_end|>
-<|im_start|>assistant
-<THINK>`;
+User Profile: ${preferences}
+Notification App: ${item.source}
+Notification Title: ${item.title}
+Notification Body: ${item.content}<|im_end|>
+<|im_start|>assistant`;
 
     const result = await llamaContext!.completion({
       prompt,
@@ -164,7 +148,7 @@ Source: ${item.source} | Title: ${item.title} | Content: ${item.content}
     } else if (output.includes("[VERDICT: SUPPRESS]")) {
       item.resolve('unimportant');
     } else {
-      item.resolve(output.toLowerCase().includes('allow') ? 'important' : 'unimportant');
+      item.resolve(output.toLowerCase().includes('unimportant') ? 'unimportant' : 'important');
     }
 
   } catch (e) {
