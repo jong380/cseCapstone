@@ -17,9 +17,7 @@ const CRITICAL_APPS = new Set([
 /*
 This is a new hybrid approach that can help cut down on computation time and battery, as well as increase accuracy.
 Stage 1: This function that scans for common marketing/spam text, and will be automatically blocked.
-Stage 2: This function that scans for emergency apps (ex. home security), and will be automatically allowed.
-Stage 3: This function scans for emergency keywords in other apps, and will be automatically allowed.
-Stage 4: If fully ambiguous, then we send to Qwen for processing.
+Stage 2: If fully ambiguous, then we send to Qwen for processing.
 */
 
 // We feed each app notification into a series of sample common buckets to account for all apps
@@ -56,16 +54,6 @@ function isMarketingOrPromo(source: string, text: string): boolean {
   return promoRegex.test(lowerText);
 }
 
-// Checks for emergency keywords and if detected will show important notification
-function containsEmergencyKeyword(text: string): boolean {
-  if (!text) return false;
-  const urgentPatterns = [
-    '\\bemergency\\b', '\\bamber alert\\b', '\\bearthquake\\b', '\\btornado\\b', '\\b911\\b',
-    '\\bfraud\\b', '\\bsuspicious login\\b', '\\bpassword reset\\b',
-    '\\bare you okay\\b', '\\bplease respond\\b', '\\bcall me\\b', '\\bhospital\\b'
-  ];
-  return new RegExp(urgentPatterns.join('|'), 'i').test(text);
-}
 
 // We initalize Qwen here
 export async function initializeClassifier(): Promise<void> {
@@ -73,14 +61,14 @@ export async function initializeClassifier(): Promise<void> {
   isInitializing = true;
 
   // Sanity check to look for Qwen local installation
-  const modelPath = `${RNFS.DocumentDirectoryPath}/qwen3-0.6b_v2.gguf`;
+  const modelPath = `${RNFS.DocumentDirectoryPath}/qwen3.gguf`;
   console.log("Checking for model file at:", modelPath);
 
   try {
     const fileExists = await RNFS.exists(modelPath);
     if (!fileExists) {
         console.log("Copying model from assets to document directory...");
-        await RNFS.copyFileAssets('nodi_final_v1.gguf', modelPath);
+        await RNFS.copyFileAssets('qwen3.gguf', modelPath);
     }
     console.log("Initializing Llama engine natively...");
     llamaContext = await initLlama({
@@ -183,19 +171,7 @@ export async function classifyNotification(
     return 'unimportant';
   }
 
-  // Stage 2: Allow Emergency Apps
-  if (CRITICAL_APPS.has(source)) {
-    console.log(`[Stage 2] Auto-passed critical system source (${source})`);
-    return 'important';
-  }
-
-  // Stage 3: Allow Emergency Keywords
-  if (containsEmergencyKeyword(combinedText)) {
-    console.log('[Stage 3] Critical Keyword Detected in app');
-    return 'important';
-  }
-
-  // Stage 4: Deploy Qwen
+  // Stage 2: Deploy Qwen
   if (!llamaContext) {
     console.warn("Llama context not ready. Defaulting to unimportant.");
     return 'unimportant';
