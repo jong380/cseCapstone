@@ -19,14 +19,14 @@ src/
   bridge/
     NotificationModule.ts             -- typed TypeScript wrapper over the bridge
   logic/
-    NotificationFilter.ts             -- orchestrates notifications through the LLM
-    ClassificationService.ts          -- LLM classification (swap this out for real LLM)
+    NotificationFilter.ts             -- orchestrates notifications through the uLM
+    ClassificationService.ts          -- uLM classification
   screens/
     HomeScreen.tsx                    -- main UI screen
     QueuedScreen.tsx                  -- UI screen for queued notifications
   services/
     backendService.ts                -- backend POST requests
-    chatService.ts                   -- chat with Groq's LLM API (May be replaced by Qwen we will see)
+    chatService.ts                   -- chat with uLM
 
 
 App.tsx                               -- UI entry point
