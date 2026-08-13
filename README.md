@@ -1,6 +1,6 @@
 # Nodi
 
-An Android app that intercepts notifications during focus mode, classifies them using an LLM, and suppresses unimportant ones.
+An Android app that intercepts notifications during focus mode, classifies them using uLM, and suppresses unimportant ones.
 
 Iryna Kovalenko, Keosha Chhajed, Ian Limasi, Jayden Ong
 
